@@ -1,4 +1,3 @@
-
 import asyncio
 import aiofiles
 import os
@@ -68,7 +67,6 @@ class LangAnalyzer:
         }
 
     async def analyze_file(self, new_file_path: Path):
-        """Performs the main analysis."""
         old_file_path = await find_latest_file(self.config.dump_dir, "ru_lang_*.txt")
         old_lines = await self.read_file(old_file_path) if old_file_path else set()
         new_lines = await self.read_file(new_file_path)
@@ -83,16 +81,18 @@ class LangAnalyzer:
         dump_file_path = self.config.dump_dir / f"ru_lang_{timestamp}.txt"
 
         log_data = self._format_log_data(analysis_results, new_lines, new_file_path, old_file_path)
+        total_lines = len(log_data) + len(new_lines)
 
-        async with aiofiles.open(log_file_path, 'w', encoding='utf-8') as log, \
-                 aiofiles.open(dump_file_path, 'w', encoding='utf-8') as dump:
-            async def write_file(file, lines):
-                for line in track(lines, description="Writing to file..."):
-                    await file.write(line + '\n')
+        with console.status("[bold green]Writing to files...") as status:
+            async with aiofiles.open(log_file_path, 'w', encoding='utf-8') as log, \
+                    aiofiles.open(dump_file_path, 'w', encoding='utf-8') as dump:
+                
+                async def write_file(file, lines):
+                    for line in lines:
+                        await file.write(line + '\n')
 
-            await asyncio.gather(write_file(log, log_data), write_file(dump, new_lines))
-
-        self._display_summary(analysis_results, log_file_path, dump_file_path, console)
+                await asyncio.gather(write_file(log, log_data), write_file(dump, new_lines))
+            console.log("Files written successfully!")
 
 
     def _format_log_data(self, analysis_results: Dict, new_lines: Set[str], new_file_path: Path, old_file_path: Path) -> List[str]:
@@ -107,8 +107,6 @@ class LangAnalyzer:
             "\nPrefix statistics:",
         ]
         log_data.extend([f"{prefix: <{analysis_results['max_prefix_len']}}: {count}" for prefix, count in analysis_results['prefix_counts'].items()])
-        log_data.extend(["\nNew items:", ""])
-        log_data.extend(analysis_results['item_values'])
         log_data.extend(["\nNew lines:", ""])
         log_data.extend(new_lines)
         return log_data
@@ -148,7 +146,7 @@ async def find_latest_file(directory: Path, pattern: str) -> Path:
     return None
 
 
-async def main():
+async def main():   
     ru_lang_path = 'C:\\sc\\EXBO\\runtime\\stalcraft\\modassets\\assets\\stalker\\lang\\ru.lang' #change if need
     if ru_lang_path:
         analyzer = LangAnalyzer()
