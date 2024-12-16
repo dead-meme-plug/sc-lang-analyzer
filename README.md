@@ -1,6 +1,6 @@
 # Language File Analyzer
 
-This Python script analyzes stalcraft language files (like `.lang` files) to identify changes, count prefixes, and detect empty values.
+This Python script analyzes Stalcraft:X language files (like `.lang` files) to identify changes, count prefixes, and detect empty values.
 
 ## Installation
 
