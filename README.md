@@ -15,7 +15,7 @@ This Python script analyzes Stalcraft language files (like `.lang` files) to ide
 1.  **Ensure your config.py is setup properly** (if you are using a custom config location or names)
 2.  **Make sure that ru.lang is in a location accessible to the script**
 3.  **Run the script:**
-  `python lang_analyzer.py`
+  `python lang-analyzer/analyzer.py`
 
 The script will find the ru.lang file (or the path you provide in the code) and generate a log file and a dump file in the dump and logs directories respectively.
 
