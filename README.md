@@ -5,14 +5,10 @@ This Python script analyzes stalcraft language files (like `.lang` files) to ide
 ## Installation
 
 1. **Clone the repository:**
+   `git clone https://github.com/dead-meme-plug/sc-lang-analyzer.git`
    
-bash
-   git clone <
 2. **Install dependencies:**
-   
-bash
-   pip install -r requirements.txt
-
+   `pip install -r requirements.txt`
 
 ## Usage
 
