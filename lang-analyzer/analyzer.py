@@ -65,14 +65,19 @@ class LangAnalyzer:
             "max_prefix_len": max_prefix_len,
             "new_lines_count": len(lines),
         }
-
+		
     async def analyze_file(self, new_file_path: Path):
         old_file_path = await find_latest_file(self.config.dump_dir, "ru_lang_*.txt")
         old_lines = await self.read_file(old_file_path) if old_file_path else set()
         new_lines = await self.read_file(new_file_path)
 
-        analysis_results = self._process_lines(new_lines - old_lines)
-        await self._write_logs(analysis_results, new_lines, new_file_path, old_file_path)
+        new_lines_only = await self._compare_files(old_lines, new_lines)
+
+        analysis_results = self._process_lines(new_lines_only)
+        await self._write_logs(analysis_results, new_lines_only, new_file_path, old_file_path)
+        
+    async def _compare_files(self, old_lines: Set[str], new_lines: Set[str]) -> Set[str]:
+        return new_lines - old_lines
 
     async def _write_logs(self, analysis_results: Dict, new_lines: Set[str], new_file_path: Path, old_file_path: Path):
         console = Console()
@@ -81,18 +86,13 @@ class LangAnalyzer:
         dump_file_path = self.config.dump_dir / f"ru_lang_{timestamp}.txt"
 
         log_data = self._format_log_data(analysis_results, new_lines, new_file_path, old_file_path)
-        total_lines = len(log_data) + len(new_lines)
 
-        with console.status("[bold green]Writing to files...") as status:
+        with console.status("[bold green]Запись в файлы...") as status:
             async with aiofiles.open(log_file_path, 'w', encoding='utf-8') as log, \
                     aiofiles.open(dump_file_path, 'w', encoding='utf-8') as dump:
-                
-                async def write_file(file, lines):
-                    for line in lines:
-                        await file.write(line + '\n')
-
-                await asyncio.gather(write_file(log, log_data), write_file(dump, new_lines))
-            console.log("Files written successfully!")
+                await log.write('\n'.join(log_data) + '\n')
+                await dump.write('\n'.join(new_lines))
+            console.log("Logs writen successfully!")
 
 
     def _format_log_data(self, analysis_results: Dict, new_lines: Set[str], new_file_path: Path, old_file_path: Path) -> List[str]:
@@ -100,7 +100,7 @@ class LangAnalyzer:
             f"Analysis time: {datetime.now().isoformat()}",
             f"New file: {new_file_path}",
             f"Comparison file: {old_file_path or 'Not found'}",
-            f"Total number of new lines: {analysis_results['new_lines_count']}",
+            f"Total number of new lines: {analysis_results['new_lines_count']}", #изменено
             f"Number of lines with empty values: {analysis_results['empty_value_count']}",
             f"Total length of new lines: {analysis_results['total_length']}",
             f"Number of unique prefixes: {analysis_results['unique_prefixes']}",
@@ -108,7 +108,7 @@ class LangAnalyzer:
         ]
         log_data.extend([f"{prefix: <{analysis_results['max_prefix_len']}}: {count}" for prefix, count in analysis_results['prefix_counts'].items()])
         log_data.extend(["\nNew lines:", ""])
-        log_data.extend(new_lines)
+        log_data.extend(new_lines) #изменено
         return log_data
 
     def _display_summary(self, analysis_results: Dict, log_file_path: Path, dump_file_path: Path, console: Console, new_file_path:Path, old_file_path:Path):
